@@ -4,8 +4,8 @@ import { Pool } from 'pg';
 
 @Injectable()
 export class DrizzleService implements OnModuleInit, OnModuleDestroy {
-    private pool: Pool;
-    public db: NodePgDatabase;
+    private pool!: Pool;
+    public db!: NodePgDatabase;
     private readonly logger = new Logger(DrizzleService.name);
 
     async onModuleInit() {
