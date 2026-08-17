@@ -11,25 +11,26 @@ export class OrdenesTrabajoController {
     constructor(private readonly ordenesTrabajoService: OrdenesTrabajoService) {}
 
     @Post()
-    @ApiOperation({ summary: 'Registrar una orden de trabajo para un vehículo' })
+    @ApiOperation({ summary: 'Registrar una orden de trabajo' })
     @ApiResponse({ status: 201, description: 'Orden de trabajo creada exitosamente' })
     @ApiResponse({ status: 400, description: 'Datos de entrada inválidos' })
     @ApiResponse({ status: 404, description: 'Vehículo o mecánico no encontrado' })
+    @ApiResponse({ status: 409, description: 'Mecánico inactivo' })
     create(@Body() createOrdenTrabajoDto: CreateOrdenTrabajoDto) {
         return this.ordenesTrabajoService.create(createOrdenTrabajoDto);
     }
 
     @Get()
     @ApiOperation({ summary: 'Listar órdenes de trabajo activas con filtros' })
-    @ApiResponse({ status: 200, description: 'Listado de órdenes de trabajo' })
+    @ApiResponse({ status: 200, description: 'Listado de órdenes' })
     findAll(@Query() query: QueryOrdenTrabajoDto) {
         return this.ordenesTrabajoService.findAll(query);
     }
 
     @Get(':id')
-    @ApiOperation({ summary: 'Obtener el detalle de una orden de trabajo por ID' })
+    @ApiOperation({ summary: 'Obtener una orden de trabajo por ID' })
     @ApiResponse({ status: 200, description: 'Orden encontrada' })
-    @ApiResponse({ status: 404, description: 'Orden no encontrada o eliminada' })
+    @ApiResponse({ status: 404, description: 'Orden no encontrada' })
     findOne(@Param('id', ParseUUIDPipe) id: string) {
         return this.ordenesTrabajoService.findOne(id);
     }
@@ -37,7 +38,8 @@ export class OrdenesTrabajoController {
     @Patch(':id')
     @ApiOperation({ summary: 'Actualizar una orden de trabajo' })
     @ApiResponse({ status: 200, description: 'Orden actualizada exitosamente' })
-    @ApiResponse({ status: 404, description: 'Orden, vehículo o mecánico no encontrado' })
+    @ApiResponse({ status: 404, description: 'Orden no encontrada' })
+    @ApiResponse({ status: 409, description: 'Mecánico inactivo' })
     update(
         @Param('id', ParseUUIDPipe) id: string,
         @Body() updateOrdenTrabajoDto: UpdateOrdenTrabajoDto,
@@ -46,7 +48,7 @@ export class OrdenesTrabajoController {
     }
 
     @Delete(':id')
-    @ApiOperation({ summary: 'Borrado lógico de una orden de trabajo' })
+    @ApiOperation({ summary: 'Eliminar una orden de trabajo (borrado lógico)' })
     @ApiResponse({ status: 200, description: 'Orden eliminada lógicamente' })
     @ApiResponse({ status: 404, description: 'Orden no encontrada' })
     remove(@Param('id', ParseUUIDPipe) id: string) {

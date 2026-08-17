@@ -48,7 +48,7 @@ export class VehiculosController {
     }
 
     @Delete(':id')
-    @ApiOperation({ summary: 'Borrado lógico de un vehículo' })
+    @ApiOperation({ summary: 'Borrado de un vehículo' })
     @ApiResponse({ status: 200, description: 'Vehículo eliminado lógicamente' })
     @ApiResponse({ status: 404, description: 'Vehículo no encontrado' })
     remove(@Param('id', ParseUUIDPipe) id: string) {
