@@ -25,3 +25,14 @@ export const vehiculos = pgTable(
             .where(sql`${table.deletedAt} IS NULL`),
     ],
 );
+
+export const vehiculosRelations = relations(vehiculos, ({ one, many }) => ({
+    cliente: one(clientes, {
+        fields: [vehiculos.clienteId],
+        references: [clientes.id],
+    }),
+    ordenesTrabajo: many(ordenesTrabajo),
+}));
+
+export type Vehiculo = typeof vehiculos.$inferSelect;
+export type NuevoVehiculo = typeof vehiculos.$inferInsert;
