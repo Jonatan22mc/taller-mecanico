@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ClientesService } from './clientes.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
+import { QueryClienteDto } from './dto/query-cliente.dto';
 
 @ApiTags('Clientes')
 @Controller('clientes')
@@ -20,8 +21,8 @@ export class ClientesController {
     @Get()
     @ApiOperation({ summary: 'Listar todos los clientes' })
     @ApiResponse({ status: 200, description: 'Listado de clientes obtenido con éxito' })
-    findAll() {
-        return this.clientesService.findAll();
+    findAll(@Query() query: QueryClienteDto) {
+        return this.clientesService.findAll(query);
     }
 
     @Get(':id')

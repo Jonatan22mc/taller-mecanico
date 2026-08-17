@@ -1,8 +1,9 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, eq, ilike, SQL } from 'drizzle-orm';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import { clientes } from '../drizzle/Schema/clientes';
 import { CreateClienteDto } from './dto/create-cliente.dto';
+import { QueryClienteDto } from './dto/query-cliente.dto';
 
 @Injectable()
 export class ClientesService {
@@ -24,8 +25,21 @@ export class ClientesService {
         return nuevo;
     }
 
-    async findAll() {
+    async findAll(query?: QueryClienteDto) {
         const db = this.drizzle.getDB();
+        const condiciones: SQL[] = [];
+
+        if (query?.nombre) {
+        condiciones.push(ilike(clientes.nombre, `%${query.nombre}%`));
+        }
+        if (query?.documento) {
+        condiciones.push(eq(clientes.documento, query.documento));
+        }
+
+        if (condiciones.length > 0) {
+        return await db.select().from(clientes).where(and(...condiciones));
+        }
+
         return await db.select().from(clientes);
     }
 
