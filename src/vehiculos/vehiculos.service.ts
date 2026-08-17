@@ -9,27 +9,27 @@ import { QueryVehiculoDto } from './dto/query-vehiculo.dto';
 
 @Injectable()
 export class VehiculosService {
-    constructor(private readonly drizzle: DrizzleService) {}
+    constructor(private readonly drizzle: DrizzleService) { }
 
     async create(createVehiculoDto: CreateVehiculoDto) {
         const db = this.drizzle.getDB();
 
         const [cliente] = await db
-        .select()
-        .from(clientes)
-        .where(eq(clientes.id, createVehiculoDto.clienteId));
+            .select()
+            .from(clientes)
+            .where(and(eq(clientes.id, createVehiculoDto.clienteId), isNull(clientes.deletedAt)));
 
         if (!cliente) {
-        throw new NotFoundException(`El cliente con ID ${createVehiculoDto.clienteId} no existe`);
+            throw new NotFoundException(`El cliente propietario con ID ${createVehiculoDto.clienteId} no existe o fue dado de baja`);
         }
 
         const [placaExistente] = await db
-        .select()
-        .from(vehiculos)
-        .where(eq(vehiculos.placa, createVehiculoDto.placa));
+            .select()
+            .from(vehiculos)
+            .where(and(eq(vehiculos.placa, createVehiculoDto.placa), isNull(vehiculos.deletedAt)));
 
         if (placaExistente) {
-        throw new ConflictException(`Ya existe un vehículo registrado con la placa ${createVehiculoDto.placa}`);
+            throw new ConflictException(`Ya existe un vehículo activo registrado con la placa ${createVehiculoDto.placa}`);
         }
 
         const [nuevo] = await db.insert(vehiculos).values(createVehiculoDto).returning();
@@ -41,30 +41,30 @@ export class VehiculosService {
         const condiciones: SQL[] = [isNull(vehiculos.deletedAt)];
 
         if (query?.placa) {
-        condiciones.push(ilike(vehiculos.placa, `%${query.placa}%`));
+            condiciones.push(ilike(vehiculos.placa, `%${query.placa}%`));
         }
         if (query?.marca) {
-        condiciones.push(ilike(vehiculos.marca, `%${query.marca}%`));
+            condiciones.push(ilike(vehiculos.marca, `%${query.marca}%`));
         }
         if (query?.anio) {
-        condiciones.push(eq(vehiculos.anio, query.anio));
+            condiciones.push(eq(vehiculos.anio, query.anio));
         }
 
-        return await db
-        .select()
-        .from(vehiculos)
-        .where(and(...condiciones));
+        return db
+            .select()
+            .from(vehiculos)
+            .where(and(...condiciones));
     }
 
     async findOne(id: string) {
         const db = this.drizzle.getDB();
         const [vehiculo] = await db
-        .select()
-        .from(vehiculos)
-        .where(and(eq(vehiculos.id, id), isNull(vehiculos.deletedAt)));
+            .select()
+            .from(vehiculos)
+            .where(and(eq(vehiculos.id, id), isNull(vehiculos.deletedAt)));
 
         if (!vehiculo) {
-        throw new NotFoundException(`Vehículo con ID ${id} no encontrado o ha sido eliminado`);
+            throw new NotFoundException(`Vehículo con ID ${id} no encontrado en la bahía de servicio o fue dado de baja`);
         }
 
         return vehiculo;
@@ -75,32 +75,32 @@ export class VehiculosService {
         await this.findOne(id);
 
         if (updateVehiculoDto.clienteId) {
-        const [cliente] = await db
-            .select()
-            .from(clientes)
-            .where(eq(clientes.id, updateVehiculoDto.clienteId));
+            const [cliente] = await db
+                .select()
+                .from(clientes)
+                .where(and(eq(clientes.id, updateVehiculoDto.clienteId), isNull(clientes.deletedAt)));
 
-        if (!cliente) {
-            throw new NotFoundException(`El cliente con ID ${updateVehiculoDto.clienteId} no existe`);
-        }
+            if (!cliente) {
+                throw new NotFoundException(`El cliente propietario con ID ${updateVehiculoDto.clienteId} no existe o fue dado de baja`);
+            }
         }
 
         if (updateVehiculoDto.placa) {
-        const [placaExistente] = await db
-            .select()
-            .from(vehiculos)
-            .where(eq(vehiculos.placa, updateVehiculoDto.placa));
+            const [placaExistente] = await db
+                .select()
+                .from(vehiculos)
+                .where(and(eq(vehiculos.placa, updateVehiculoDto.placa), isNull(vehiculos.deletedAt)));
 
-        if (placaExistente && placaExistente.id !== id) {
-            throw new ConflictException(`La placa ${updateVehiculoDto.placa} ya está en uso`);
-        }
+            if (placaExistente && placaExistente.id !== id) {
+                throw new ConflictException(`La placa vehicular ${updateVehiculoDto.placa} ya está en uso por otro vehículo activo`);
+            }
         }
 
         const [actualizado] = await db
-        .update(vehiculos)
-        .set({ ...updateVehiculoDto, updatedAt: new Date() })
-        .where(eq(vehiculos.id, id))
-        .returning();
+            .update(vehiculos)
+            .set({ ...updateVehiculoDto, updatedAt: new Date() })
+            .where(and(eq(vehiculos.id, id), isNull(vehiculos.deletedAt)))
+            .returning();
 
         return actualizado;
     }
@@ -110,14 +110,14 @@ export class VehiculosService {
         await this.findOne(id);
 
         const [eliminado] = await db
-        .update(vehiculos)
-        .set({ deletedAt: new Date() })
-        .where(eq(vehiculos.id, id))
-        .returning();
+            .update(vehiculos)
+            .set({ deletedAt: new Date() })
+            .where(eq(vehiculos.id, id))
+            .returning();
 
         return {
-        message: `Vehículo con ID ${id} eliminado correctamente (borrado lógico)`,
-        vehiculo: eliminado,
+            message: `Vehículo con ID ${id} retirado correctamente`,
+            vehiculo: eliminado,
         };
     }
 }
